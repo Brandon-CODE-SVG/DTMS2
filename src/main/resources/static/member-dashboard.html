@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Member Dashboard - Fitness Tracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .sidebar {
+      background: #2c3e50;
+      min-height: 100vh;
+      color: white;
+    }
+    .sidebar .nav-link {
+      color: #bdc3c7;
+      padding: 15px 20px;
+    }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active {
+      background: #34495e;
+      color: white;
+    }
+    .main-content {
+      background: #ecf0f1;
+      min-height: 100vh;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3 col-lg-2 sidebar">
+      <div class="d-flex flex-column p-3">
+        <h4 class="text-center mb-4">Fitness Tracker</h4>
+        <ul class="nav nav-pills flex-column mb-auto">
+          <li class="nav-item">
+            <a href="#" class="nav-link active" onclick="showSection('dashboard')">
+              <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="#" class="nav-link" onclick="showSection('log-workout')">
+              <i class="fas fa-plus me-2"></i>Log Workout
+            </a>
+          </li>
+          <li>
+            <a href="#" class="nav-link" onclick="showSection('workout-history')">
+              <i class="fas fa-history me-2"></i>Workout History
+            </a>
+          </li>
+          <li>
+            <a href="#" class="nav-link" onclick="showSection('progress')">
+              <i class="fas fa-chart-line me-2"></i>Progress
+            </a>
+          </li>
+        </ul>
+        <hr>
+        <div class="dropdown">
+          <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown">
+            <img src="https://github.com/mdo.png" alt="" width="32" height="32" class="rounded-circle me-2">
+            <strong id="userName">Member</strong>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+            <li><a class="dropdown-item" href="#" onclick="logout()">Sign out</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="col-md-9 col-lg-10 main-content">
+      <div class="p-4">
+        <!-- Dashboard Section -->
+        <div id="dashboard-section">
+          <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Dashboard</h1>
+          </div>
+
+          <!-- Stats Cards -->
+          <div class="row">
+            <div class="col-md-3">
+              <div class="stat-card">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h6 class="text-muted">Total Workouts</h6>
+                    <h3 id="totalWorkouts">0</h3>
+                  </div>
+                  <div class="align-self-center">
+                    <i class="fas fa-dumbbell fa-2x text-primary"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-card">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h6 class="text-muted">Calories Burned</h6>
+                    <h3 id="totalCalories">0</h3>
+                  </div>
+                  <div class="align-self-center">
+                    <i class="fas fa-fire fa-2x text-danger"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-card">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h6 class="text-muted">Distance</h6>
+                    <h3 id="totalDistance">0 km</h3>
+                  </div>
+                  <div class="align-self-center">
+                    <i class="fas fa-running fa-2x text-success"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-card">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h6 class="text-muted">Avg Heart Rate</h6>
+                    <h3 id="avgHeartRate">0</h3>
+                  </div>
+                  <div class="align-self-center">
+                    <i class="fas fa-heartbeat fa-2x text-warning"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts -->
+          <div class="row mt-4">
+            <div class="col-md-6">
+              <div class="stat-card">
+                <h5>Calories Burned Over Time</h5>
+                <canvas id="caloriesChart" height="250"></canvas>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="stat-card">
+                <h5>Workout Distribution</h5>
+                <canvas id="workoutDistributionChart" height="250"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Workouts -->
+          <div class="row mt-4">
+            <div class="col-12">
+              <div class="stat-card">
+                <h5>Recent Workouts</h5>
+                <div id="recentWorkoutsTable">
+                  <table class="table">
+                    <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Machine</th>
+                      <th>Duration</th>
+                      <th>Calories</th>
+                      <th>Distance</th>
+                      <th>Quality Check</th>
+                    </tr>
+                    </thead>
+                    <tbody id="recentWorkoutsBody">
+                    <!-- Will be populated by JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Log Workout Section -->
+        <div id="log-workout-section" style="display: none;">
+          <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Log New Workout</h1>
+          </div>
+
+          <div class="row">
+            <div class="col-md-8">
+              <div class="stat-card">
+                <form id="workoutForm">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label">Machine</label>
+                        <select class="form-select" id="machine" required>
+                          <option value="">Select Machine</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label">Start Time</label>
+                        <input type="datetime-local" class="form-control" id="startTime" required>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label">Duration (minutes)</label>
+                        <input type="number" class="form-control" id="duration" min="1" max="180" required>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label">Calories Burned</label>
+                        <input type="number" class="form-control" id="calories" min="1" max="1500" required>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label">Average Heart Rate (bpm)</label>
+                        <input type="number" class="form-control" id="heartRate" min="40" max="220" required>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label">Distance (km)</label>
+                        <input type="number" class="form-control" id="distance" step="0.1" min="0" max="50" required>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label">Average Speed (km/h)</label>
+                        <input type="number" class="form-control" id="speed" step="0.1" min="0" max="30">
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label">Resistance Level</label>
+                        <input type="number" class="form-control" id="resistance" min="1" max="20">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control" id="notes" rows="3"></textarea>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Save Workout
+                  </button>
+                </form>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="stat-card">
+                <h5>Data Quality Check</h5>
+                <div id="qualityCheckResults" class="mt-3">
+                  <p class="text-muted">Fill out the form to see quality check results</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Workout History Section -->
+        <div id="workout-history-section" style="display: none;">
+          <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Workout History</h1>
+          </div>
+
+          <div class="stat-card">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                <tr>
+                  <th>Date & Time</th>
+                  <th>Machine</th>
+                  <th>Duration</th>
+                  <th>Calories</th>
+                  <th>Heart Rate</th>
+                  <th>Distance</th>
+                  <th>Quality Status</th>
+                </tr>
+                </thead>
+                <tbody id="workoutHistoryBody">
+                <!-- Will be populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div id="progress-section" style="display: none;">
+          <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Progress Tracking</h1>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <div class="stat-card">
+                <h5>Monthly Progress</h5>
+                <canvas id="progressChart" height="100"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="member-dashboard.js"></script>
+</body>
+</html>

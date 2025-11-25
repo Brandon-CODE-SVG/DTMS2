@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Tracker - Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        .login-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .login-left {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="login-container">
+                <div class="row g-0">
+                    <div class="col-md-6 login-left d-none d-md-flex align-items-center justify-content-center">
+                        <div class="text-center">
+                            <i class="fas fa-dumbbell fa-5x mb-4"></i>
+                            <h2>Fitness Tracker</h2>
+                            <p class="mb-0">Track Your Progress. Achieve Your Goals.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-5">
+                            <h3 class="text-center mb-4">Welcome Back</h3>
+                            <form id="loginForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="username" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="password" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 mb-3">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                                </button>
+                            </form>
+                            <div class="text-center">
+                                <p class="mb-0">Don't have an account? <a href="register.html" class="text-decoration-none">Sign up</a></p>
+                            </div>
+                            <div class="mt-4">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                    </div>
+                                    <div class="col-6">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js">
+
+    console.log('Login page loaded');
+    console.log('Current path:', window.location.pathname);
+
+    // Check if we're already logged in
+    fetch('/api/auth/current-user')
+        .then(response => {
+            console.log('Auth check response status:', response.status);
+            return response.json();
+        })
+        .then(user => {
+            console.log('Current user:', user);
+        })
+        .catch(error => {
+            console.log('Not logged in or error:', error);
+        });
+</script>
+<script src="auth.js"></script>
+</body>
+</html>
