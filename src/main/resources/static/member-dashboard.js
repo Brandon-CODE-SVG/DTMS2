@@ -43,7 +43,8 @@ class MemberDashboard {
             // Try to fetch machines from API first
             const response = await fetch('/api/machines');
             if (response.ok) {
-                this.machines = await response.json();
+                const result = await response.json();
+                this.machines = result.machines || [];
             } else {
                 // Fallback to mock data
                 this.machines = [
@@ -71,36 +72,24 @@ class MemberDashboard {
 
     async loadWorkoutSessions() {
         try {
-            // Using mock data since the API endpoint might not exist yet
-            // In a real app, you'd use: const response = await fetch('/api/workouts/my-sessions');
-            this.workoutSessions = [
-                {
-                    id: 1,
-                    startTime: new Date(Date.now() - 86400000).toISOString(),
-                    machine: { name: 'Treadmill-001', type: 'Treadmill' },
-                    duration: 30,
-                    caloriesBurned: 320,
-                    avgHeartRate: 145,
-                    distance: 3.2,
-                    dataQualityFlag: true
-                },
-                {
-                    id: 2,
-                    startTime: new Date(Date.now() - 172800000).toISOString(),
-                    machine: { name: 'Exercise Bike-001', type: 'Exercise Bike' },
-                    duration: 45,
-                    caloriesBurned: 280,
-                    avgHeartRate: 132,
-                    distance: 15.0,
-                    dataQualityFlag: true
-                }
-            ];
+            const response = await fetch('/api/workouts/my-sessions');
+            if (response.ok) {
+                const sessions = await response.json();
+                console.log('Loaded sessions:', sessions);
 
-            this.renderWorkoutHistory();
-            this.renderRecentWorkouts();
+                // Ensure sessions is an array
+                this.workoutSessions = Array.isArray(sessions) ? sessions : [];
+
+                this.renderWorkoutHistory();
+                this.renderRecentWorkouts();
+                this.updateDashboardStats();
+                this.renderCharts();
+            } else {
+                console.error('Failed to load workout sessions:', response.status);
+                this.workoutSessions = [];
+            }
         } catch (error) {
             console.error('Failed to load workout sessions:', error);
-            // Initialize with empty array
             this.workoutSessions = [];
         }
     }
@@ -186,36 +175,37 @@ class MemberDashboard {
             notes: document.getElementById('notes').value
         };
 
+        console.log('Submitting workout data:', formData);
+
         try {
-            // For now, just simulate success since the API might not be implemented
-            console.log('Submitting workout:', formData);
+            const response = await fetch('/api/workouts/simple', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
 
-            // Add to local sessions array
-            const newWorkout = {
-                id: Date.now(),
-                startTime: formData.startTime,
-                machine: this.machines.find(m => m.id === formData.machineId),
-                duration: formData.duration,
-                caloriesBurned: formData.caloriesBurned,
-                avgHeartRate: formData.avgHeartRate,
-                distance: formData.distance,
-                dataQualityFlag: true
-            };
+            const result = await response.json();
 
-            this.workoutSessions.unshift(newWorkout);
+            if (result.success) {
+                alert('Workout saved successfully!');
+                document.getElementById('workoutForm').reset();
+                this.setDefaultStartTime();
 
-            alert('Workout saved successfully!');
-            document.getElementById('workoutForm').reset();
-            this.setDefaultStartTime();
+                const resultsDiv = document.getElementById('qualityCheckResults');
+                if (resultsDiv) {
+                    resultsDiv.innerHTML = '<p class="text-muted">Fill out the form to see quality check results</p>';
+                }
 
-            const resultsDiv = document.getElementById('qualityCheckResults');
-            if (resultsDiv) {
-                resultsDiv.innerHTML = '<p class="text-muted">Fill out the form to see quality check results</p>';
+                // Reload the sessions from the server
+                await this.loadWorkoutSessions();
+
+                // Show dashboard section after successful save - FIXED: use this.showSection
+                this.showSection('dashboard');
+            } else {
+                alert('Error saving workout: ' + result.message);
             }
-
-            await this.loadWorkoutSessions();
-            this.updateDashboardStats();
-            this.renderCharts();
 
         } catch (error) {
             console.error('Error saving workout:', error);
@@ -224,60 +214,106 @@ class MemberDashboard {
     }
 
     updateDashboardStats() {
+        console.log('Updating stats with sessions:', this.workoutSessions);
+
         const totalWorkouts = this.workoutSessions.length;
         const totalCalories = this.workoutSessions.reduce((sum, session) => sum + (session.caloriesBurned || 0), 0);
         const totalDistance = this.workoutSessions.reduce((sum, session) => sum + (session.distance || 0), 0);
-        const avgHeartRate = this.workoutSessions.length > 0 ?
-            Math.round(this.workoutSessions.reduce((sum, session) => sum + (session.avgHeartRate || 0), 0) / this.workoutSessions.length) : 0;
 
-        document.getElementById('totalWorkouts').textContent = totalWorkouts;
-        document.getElementById('totalCalories').textContent = totalCalories.toLocaleString();
-        document.getElementById('totalDistance').textContent = totalDistance.toFixed(1);
-        document.getElementById('avgHeartRate').textContent = avgHeartRate;
+        // Calculate average heart rate safely
+        const validHeartRates = this.workoutSessions
+            .filter(session => session.avgHeartRate && session.avgHeartRate > 0)
+            .map(session => session.avgHeartRate);
+
+        const avgHeartRate = validHeartRates.length > 0 ?
+            Math.round(validHeartRates.reduce((sum, rate) => sum + rate, 0) / validHeartRates.length) : 0;
+
+        // Update DOM elements
+        const totalWorkoutsEl = document.getElementById('totalWorkouts');
+        const totalCaloriesEl = document.getElementById('totalCalories');
+        const totalDistanceEl = document.getElementById('totalDistance');
+        const avgHeartRateEl = document.getElementById('avgHeartRate');
+
+        if (totalWorkoutsEl) totalWorkoutsEl.textContent = totalWorkouts;
+        if (totalCaloriesEl) totalCaloriesEl.textContent = totalCalories.toLocaleString();
+        if (totalDistanceEl) totalDistanceEl.textContent = totalDistance.toFixed(1);
+        if (avgHeartRateEl) avgHeartRateEl.textContent = avgHeartRate;
+
+        console.log('Stats updated:', { totalWorkouts, totalCalories, totalDistance, avgHeartRate });
     }
 
     renderWorkoutHistory() {
         const tbody = document.getElementById('workoutHistoryBody');
         if (!tbody) return;
 
-        tbody.innerHTML = this.workoutSessions.map(session => `
-            <tr>
-                <td>${new Date(session.startTime).toLocaleString()}</td>
-                <td>${session.machine?.name || 'N/A'}</td>
-                <td>${this.formatDuration(session.duration)}</td>
-                <td>${session.caloriesBurned || 0}</td>
-                <td>${session.avgHeartRate || 0}</td>
-                <td>${session.distance ? session.distance.toFixed(1) + ' km' : 'N/A'}</td>
-                <td>
-                    ${session.dataQualityFlag ?
-            '<span class="badge bg-success"><i class="fas fa-check"></i> Good</span>' :
-            '<span class="badge bg-warning"><i class="fas fa-exclamation-triangle"></i> Check</span>'
+        if (this.workoutSessions.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No workout sessions found</td></tr>';
+            return;
         }
-                </td>
-            </tr>
-        `).join('');
+
+        tbody.innerHTML = this.workoutSessions.map(session => {
+            // Safely handle the data
+            const startTime = session.startTime ? new Date(session.startTime) : new Date();
+            const machineName = session.machine ? (session.machine.name || 'N/A') : 'N/A';
+            const duration = this.formatDuration(session.duration);
+            const calories = session.caloriesBurned || 0;
+            const heartRate = session.avgHeartRate || 0;
+            const distance = session.distance ? session.distance.toFixed(1) + ' km' : 'N/A';
+            const qualityStatus = session.dataQualityFlag !== false;
+
+            return `
+                <tr>
+                    <td>${startTime.toLocaleString()}</td>
+                    <td>${machineName}</td>
+                    <td>${duration}</td>
+                    <td>${calories}</td>
+                    <td>${heartRate}</td>
+                    <td>${distance}</td>
+                    <td>
+                        ${qualityStatus ?
+                '<span class="badge bg-success"><i class="fas fa-check"></i> Good</span>' :
+                '<span class="badge bg-warning"><i class="fas fa-exclamation-triangle"></i> Check</span>'
+            }
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
     renderRecentWorkouts() {
         const tbody = document.getElementById('recentWorkoutsBody');
         if (!tbody) return;
 
-        const recentSessions = this.workoutSessions.slice(0, 5);
-        tbody.innerHTML = recentSessions.map(session => `
-            <tr>
-                <td>${new Date(session.startTime).toLocaleDateString()}</td>
-                <td>${session.machine?.name || 'N/A'}</td>
-                <td>${this.formatDuration(session.duration)}</td>
-                <td>${session.caloriesBurned || 0}</td>
-                <td>${session.distance ? session.distance.toFixed(1) + ' km' : 'N/A'}</td>
-                <td>
-                    ${session.dataQualityFlag ?
-            '<span class="badge bg-success">Good</span>' :
-            '<span class="badge bg-warning">Issues</span>'
+        if (this.workoutSessions.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No recent workouts</td></tr>';
+            return;
         }
-                </td>
-            </tr>
-        `).join('');
+
+        const recentSessions = this.workoutSessions.slice(0, 5);
+        tbody.innerHTML = recentSessions.map(session => {
+            const startTime = session.startTime ? new Date(session.startTime) : new Date();
+            const machineName = session.machine ? (session.machine.name || 'N/A') : 'N/A';
+            const duration = this.formatDuration(session.duration);
+            const calories = session.caloriesBurned || 0;
+            const distance = session.distance ? session.distance.toFixed(1) + ' km' : 'N/A';
+            const qualityStatus = session.dataQualityFlag !== false;
+
+            return `
+                <tr>
+                    <td>${startTime.toLocaleDateString()}</td>
+                    <td>${machineName}</td>
+                    <td>${duration}</td>
+                    <td>${calories}</td>
+                    <td>${distance}</td>
+                    <td>
+                        ${qualityStatus ?
+                '<span class="badge bg-success">Good</span>' :
+                '<span class="badge bg-warning">Issues</span>'
+            }
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
     renderCharts() {
@@ -295,44 +331,48 @@ class MemberDashboard {
             ctx.chart.destroy();
         }
 
-        // Group by date for demo
+        // Group by date
         const dailyData = {};
         this.workoutSessions.forEach(session => {
-            const date = new Date(session.startTime).toLocaleDateString();
-            if (!dailyData[date]) dailyData[date] = 0;
-            dailyData[date] += session.caloriesBurned || 0;
+            if (session.startTime && session.caloriesBurned) {
+                const date = new Date(session.startTime).toLocaleDateString();
+                dailyData[date] = (dailyData[date] || 0) + session.caloriesBurned;
+            }
         });
 
         const labels = Object.keys(dailyData).slice(-7); // Last 7 days
         const data = labels.map(label => dailyData[label]);
 
-        ctx.chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Calories Burned',
-                    data: data,
-                    borderColor: '#3498db',
-                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
+        // Only create chart if we have data
+        if (labels.length > 0 && data.length > 0) {
+            ctx.chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Calories Burned',
+                        data: data,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
     }
 
     renderWorkoutDistributionChart() {
@@ -350,26 +390,32 @@ class MemberDashboard {
             return acc;
         }, {});
 
-        ctx.chart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(machineCounts),
-                datasets: [{
-                    data: Object.values(machineCounts),
-                    backgroundColor: [
-                        '#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
+        const labels = Object.keys(machineCounts);
+        const data = Object.values(machineCounts);
+
+        // Only create chart if we have data
+        if (labels.length > 0 && data.length > 0) {
+            ctx.chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            '#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
     }
 
     renderProgressChart() {
@@ -384,75 +430,124 @@ class MemberDashboard {
         // Monthly progress data
         const monthlyData = {};
         this.workoutSessions.forEach(session => {
-            const month = new Date(session.startTime).toLocaleDateString('en', { month: 'short' });
-            if (!monthlyData[month]) monthlyData[month] = { workouts: 0, calories: 0 };
-            monthlyData[month].workouts++;
-            monthlyData[month].calories += session.caloriesBurned || 0;
+            if (session.startTime) {
+                const month = new Date(session.startTime).toLocaleDateString('en', { month: 'short', year: 'numeric' });
+                if (!monthlyData[month]) monthlyData[month] = { workouts: 0, calories: 0 };
+                monthlyData[month].workouts++;
+                monthlyData[month].calories += session.caloriesBurned || 0;
+            }
         });
 
         const labels = Object.keys(monthlyData);
+        const workoutData = labels.map(month => monthlyData[month].workouts);
+        const calorieData = labels.map(month => monthlyData[month].calories);
 
-        ctx.chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Workouts',
-                        data: labels.map(month => monthlyData[month].workouts),
-                        backgroundColor: '#3498db',
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Calories',
-                        data: labels.map(month => monthlyData[month].calories),
-                        backgroundColor: '#e74c3c',
-                        yAxisID: 'y1',
-                        type: 'line',
-                        borderColor: '#e74c3c',
-                        tension: 0.4
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: {
+        // Only create chart if we have data
+        if (labels.length > 0 && workoutData.length > 0) {
+            ctx.chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Workouts',
+                            data: workoutData,
+                            backgroundColor: '#3498db',
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Calories',
+                            data: calorieData,
+                            backgroundColor: '#e74c3c',
+                            yAxisID: 'y1',
+                            type: 'line',
+                            borderColor: '#e74c3c',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            type: 'linear',
                             display: true,
-                            text: 'Number of Workouts'
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Number of Workouts'
+                            },
+                            beginAtZero: true
                         },
-                        beginAtZero: true
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: {
+                        y1: {
+                            type: 'linear',
                             display: true,
-                            text: 'Calories Burned'
-                        },
-                        grid: {
-                            drawOnChartArea: false
-                        },
-                        beginAtZero: true
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Calories Burned'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            beginAtZero: true
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
     }
 
-    formatDuration(minutes) {
-        if (!minutes) return 'N/A';
-        return `${minutes} min`;
+    formatDuration(duration) {
+        if (!duration) return 'N/A';
+
+        // Handle Duration object (if it's from Java)
+        if (typeof duration === 'object' && duration.seconds !== undefined) {
+            const minutes = Math.floor(duration.seconds / 60);
+            return `${minutes} min`;
+        }
+
+        // Handle number (minutes)
+        if (typeof duration === 'number') {
+            return `${duration} min`;
+        }
+
+        // Handle string
+        if (typeof duration === 'string') {
+            return duration;
+        }
+
+        return 'N/A';
+    }
+
+    // FIXED: Add showSection method to the class
+    showSection(sectionName) {
+        // Hide all sections
+        document.querySelectorAll('[id$="-section"]').forEach(section => {
+            section.style.display = 'none';
+        });
+
+        // Show selected section
+        const targetSection = document.getElementById(sectionName + '-section');
+        if (targetSection) {
+            targetSection.style.display = 'block';
+        }
+
+        // Update active nav link
+        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+            link.classList.remove('active');
+        });
+
+        // Find and activate the clicked link - safely
+        const clickedLink = document.querySelector(`[onclick*="${sectionName}"]`);
+        if (clickedLink) {
+            clickedLink.classList.add('active');
+        }
     }
 }
 
-// Section navigation
-function showSection(sectionName) {
+// FIXED: Update the global showSection function to handle the event properly
+function showSection(sectionName, event) {
     // Hide all sections
     document.querySelectorAll('[id$="-section"]').forEach(section => {
         section.style.display = 'none';
@@ -469,24 +564,51 @@ function showSection(sectionName) {
         link.classList.remove('active');
     });
 
-    // Find and activate the clicked link
-    event.target.classList.add('active');
+    // Find and activate the clicked link - safely handle event
+    if (event && event.target) {
+        event.target.classList.add('active');
+    } else {
+        // Fallback: find link by section name
+        const clickedLink = document.querySelector(`[onclick*="${sectionName}"]`);
+        if (clickedLink) {
+            clickedLink.classList.add('active');
+        }
+    }
 }
 
 // Logout function
 async function logout() {
     try {
-        const response = await fetch('/api/auth/logout', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
+        console.log('Attempting logout...');
 
-        window.location.href = '/login.html';
+        // Try API logout first
+        try {
+            const response = await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                console.log('API logout successful');
+            }
+        } catch (apiError) {
+            console.log('API logout failed, using direct logout:', apiError);
+        }
+
+        // Clear local storage
+        localStorage.clear();
+        sessionStorage.clear();
+
+        // Always redirect to logout endpoint
+        window.location.href = '/logout';
+
     } catch (error) {
         console.error('Logout error:', error);
-        window.location.href = '/login.html';
+        // Fallback: redirect to login
+        window.location.href = '/login';
     }
 }
 

@@ -43,4 +43,17 @@ public interface WorkoutSessionRepository extends JpaRepository<WorkoutSession, 
 
     @Query("SELECT COUNT(ws) FROM WorkoutSession ws WHERE ws.user = :user")
     Long countSessionsByUser(@Param("user") User user);
+
+    // ADD THESE NEW METHODS:
+    @Query("SELECT ws FROM WorkoutSession ws WHERE ws.dataQualityFlag = false ORDER BY ws.startTime DESC")
+    List<WorkoutSession> findByDataQualityFlagFalse();
+
+    @Query(value = "SELECT * FROM workout_sessions ws ORDER BY ws.start_time DESC LIMIT :limit", nativeQuery = true)
+    List<WorkoutSession> findTopByOrderByStartTimeDesc(@Param("limit") int limit);
+
+    @Query(value = "SELECT * FROM workout_sessions ws WHERE ws.user_id = :userId ORDER BY ws.start_time DESC LIMIT :limit", nativeQuery = true)
+    List<WorkoutSession> findTopByUserOrderByStartTimeDesc(@Param("userId") Long userId, @Param("limit") int limit);
+
+    @Query("SELECT COUNT(ws) FROM WorkoutSession ws WHERE ws.machine.id = :machineId")
+    Long countSessionsByMachineId(@Param("machineId") Long machineId);
 }

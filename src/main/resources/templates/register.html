@@ -141,31 +141,135 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/auth.js"></script>
+<script src="/auth.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    const registerForm = document.getElementById('registerForm');
+
+    if (registerForm) {
+      registerForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        console.log('Register form submitted');
+
+        // Get form data
+        const userData = {
+          firstName: document.getElementById('firstName').value.trim(),
+          lastName: document.getElementById('lastName').value.trim(),
+          username: document.getElementById('username').value.trim(),
+          email: document.getElementById('email').value.trim(),
+          password: document.getElementById('password').value
+        };
+
+        console.log('Registration data:', userData);
+
+        // Validate required fields
+        if (!userData.firstName || !userData.lastName || !userData.username || !userData.email || !userData.password) {
+          showMessage('Please fill in all required fields', 'danger');
+          return;
+        }
+
+        // Validate passwords match
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        if (userData.password !== confirmPassword) {
+          showMessage('Passwords do not match', 'danger');
+          return;
+        }
+
+        // Validate password length
+        if (userData.password.length < 6) {
+          showMessage('Password must be at least 6 characters', 'danger');
+          return;
+        }
+
+        // Validate terms
+        if (!document.getElementById('terms').checked) {
+          showMessage('Please accept the terms and conditions', 'danger');
+          return;
+        }
+
+        // Show loading state
+        const submitBtn = registerForm.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+        submitBtn.disabled = true;
+
+        try {
+          const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData)
+          });
+
+          const result = await response.json();
+          console.log('Registration response:', result);
+
+          if (result.success) {
+            showMessage(result.message || 'Account created successfully! Redirecting to login...', 'success');
+            // Redirect to login page after 2 seconds
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 2000);
+          } else {
+            showMessage(result.message || 'Registration failed. Please try again.', 'danger');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+          }
+        } catch (error) {
+          console.error('Registration error:', error);
+          showMessage('Registration failed: ' + error.message, 'danger');
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
+        }
+      });
+    }
+
+    function showMessage(message, type) {
+      const messageDiv = document.getElementById('registerMessage');
+      if (messageDiv) {
+        messageDiv.textContent = message;
+        messageDiv.className = `alert alert-${type}`;
+        messageDiv.style.display = 'block';
+
+        // Scroll to message
+        messageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        alert(message); // Fallback
+      }
+    }
+
+    // Password strength indicator (keep your existing code)
     const password = document.getElementById('password');
     const confirmPassword = document.getElementById('confirmPassword');
     const passwordStrength = document.getElementById('passwordStrength');
     const passwordMatchError = document.getElementById('passwordMatchError');
 
-    // Password strength indicator
-    password.addEventListener('input', function() {
-      const strength = calculatePasswordStrength(this.value);
-      passwordStrength.className = 'password-strength ' + strength.class;
-      passwordStrength.style.width = strength.width;
-    });
+    if (password) {
+      password.addEventListener('input', function() {
+        const strength = calculatePasswordStrength(this.value);
+        if (passwordStrength) {
+          passwordStrength.className = 'password-strength ' + strength.class;
+          passwordStrength.style.width = strength.width;
+        }
+      });
+    }
 
-    // Password confirmation check
-    confirmPassword.addEventListener('input', function() {
-      if (password.value !== this.value) {
-        this.classList.add('is-invalid');
-        passwordMatchError.style.display = 'block';
-      } else {
-        this.classList.remove('is-invalid');
-        passwordMatchError.style.display = 'none';
-      }
-    });
+    if (confirmPassword) {
+      confirmPassword.addEventListener('input', function() {
+        if (password.value !== this.value) {
+          this.classList.add('is-invalid');
+          if (passwordMatchError) {
+            passwordMatchError.style.display = 'block';
+          }
+        } else {
+          this.classList.remove('is-invalid');
+          if (passwordMatchError) {
+            passwordMatchError.style.display = 'none';
+          }
+        }
+      });
+    }
 
     function calculatePasswordStrength(password) {
       let strength = 0;

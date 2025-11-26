@@ -32,48 +32,52 @@ public class DataLoader implements CommandLineRunner {
     }
 
     private void createDefaultUsers() {
-        if (userRepository.findByUsername("admin").isEmpty()) {
-            User admin = new User();
-            admin.setUsername("admin");
-            admin.setPassword(passwordEncoder.encode("admin123")); // ENCODE THE PASSWORD
-            admin.setEmail("admin@twendefitness.com");
-            admin.setFirstName("System");
-            admin.setLastName("Administrator");
-            admin.setRole(User.UserRole.ADMIN);
-            admin.setCreatedAt(LocalDateTime.now());
-            admin.setUpdatedAt(LocalDateTime.now());
-            userRepository.save(admin);
-            System.out.println("Default admin user created: admin/admin123");
-        }
+        // Delete existing users to start fresh
+        userRepository.deleteAll();
 
-        if (userRepository.findByUsername("instructor").isEmpty()) {
-            User instructor = new User();
-            instructor.setUsername("instructor");
-            instructor.setPassword(passwordEncoder.encode("instructor123")); // ENCODE THE PASSWORD
-            instructor.setEmail("instructor@twendefitness.com");
-            instructor.setFirstName("Fitness");
-            instructor.setLastName("Instructor");
-            instructor.setRole(User.UserRole.INSTRUCTOR);
-            instructor.setCreatedAt(LocalDateTime.now());
-            instructor.setUpdatedAt(LocalDateTime.now());
-            userRepository.save(instructor);
-            System.out.println("Default instructor user created: instructor/instructor123");
-        }
+        // Create admin user
+        User admin = new User();
+        admin.setUsername("admin");
+        admin.setPassword(passwordEncoder.encode("admin123")); // MUST USE ENCODER
+        admin.setEmail("admin@twendefitness.com");
+        admin.setFirstName("System");
+        admin.setLastName("Administrator");
+        admin.setRole(User.UserRole.ADMIN);
+        admin.setCreatedAt(LocalDateTime.now());
+        admin.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(admin);
+        System.out.println("✅ Default admin user created: admin/admin123");
+        System.out.println("🔐 Admin password encoded: " + admin.getPassword().startsWith("$2a$"));
 
-        if (userRepository.findByUsername("member").isEmpty()) {
-            User member = new User();
-            member.setUsername("member");
-            member.setPassword(passwordEncoder.encode("member123")); // ENCODE THE PASSWORD
-            member.setEmail("member@twendefitness.com");
-            member.setFirstName("John");
-            member.setLastName("Member");
-            member.setRole(User.UserRole.MEMBER);
-            member.setCreatedAt(LocalDateTime.now());
-            member.setUpdatedAt(LocalDateTime.now());
-            userRepository.save(member);
-            System.out.println("Sample member user created: member/member123");
-        }
+        // Create instructor user
+        User instructor = new User();
+        instructor.setUsername("instructor");
+        instructor.setPassword(passwordEncoder.encode("instructor123")); // MUST USE ENCODER
+        instructor.setEmail("instructor@twendefitness.com");
+        instructor.setFirstName("Fitness");
+        instructor.setLastName("Instructor");
+        instructor.setRole(User.UserRole.INSTRUCTOR);
+        instructor.setCreatedAt(LocalDateTime.now());
+        instructor.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(instructor);
+        System.out.println("✅ Default instructor user created: instructor/instructor123");
+        System.out.println("🔐 Instructor password encoded: " + instructor.getPassword().startsWith("$2a$"));
+
+        // Create member user
+        User member = new User();
+        member.setUsername("member");
+        member.setPassword(passwordEncoder.encode("member123")); // MUST USE ENCODER
+        member.setEmail("member@twendefitness.com");
+        member.setFirstName("John");
+        member.setLastName("Member");
+        member.setRole(User.UserRole.MEMBER);
+        member.setCreatedAt(LocalDateTime.now());
+        member.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(member);
+        System.out.println("✅ Sample member user created: member/member123");
+        System.out.println("🔐 Member password encoded: " + member.getPassword().startsWith("$2a$"));
     }
+
 
 
     private void createDefaultMachines() {
