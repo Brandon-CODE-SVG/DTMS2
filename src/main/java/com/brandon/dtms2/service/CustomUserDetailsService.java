@@ -1,6 +1,5 @@
 package com.brandon.dtms2.service;
 
-
 import com.brandon.dtms2.entity.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

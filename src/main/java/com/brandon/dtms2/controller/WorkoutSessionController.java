@@ -179,6 +179,86 @@ public class WorkoutSessionController {
         }
     }
 
+//    @GetMapping("/my-sessions")
+//    public ResponseEntity<?> getMySessions(HttpSession httpSession) {
+//        try {
+//            Object sessionUser = httpSession.getAttribute("user");
+//            User user = null;
+//
+//            if (sessionUser instanceof User) {
+//                user = (User) sessionUser;
+//            } else if (sessionUser instanceof Map) {
+//                Map<?, ?> userMap = (Map<?, ?>) sessionUser;
+//                Long userId = Long.valueOf(userMap.get("id").toString());
+//                Optional<User> userOpt = userService.findById(userId);
+//                if (userOpt.isPresent()) {
+//                    user = userOpt.get();
+//                }
+//            }
+//
+//            if (user == null) {
+//                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "User not logged in"));
+//            }
+//
+//            List<WorkoutSession> sessions = workoutSessionService.getUserSessions(user);
+//
+//            // Convert to DTO to avoid circular references
+//            List<WorkoutSessionResponseDTO> sessionDTOs = sessions.stream()
+//                    .map(WorkoutSessionResponseDTO::fromWorkoutSession)
+//                    .collect(Collectors.toList());
+//
+//            return ResponseEntity.ok(sessionDTOs);
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Failed to fetch sessions"));
+//        }
+//    }
+
+//    @GetMapping("/user/{userId}")
+//    public ResponseEntity<?> getUserSessions(@PathVariable Long userId, HttpSession httpSession) {
+//        try {
+//            // Handle session user properly
+//            Object sessionUser = httpSession.getAttribute("user");
+//            User currentUser = null;
+//
+//            if (sessionUser instanceof User) {
+//                currentUser = (User) sessionUser;
+//            } else if (sessionUser instanceof Map) {
+//                Map<?, ?> userMap = (Map<?, ?>) sessionUser;
+//                Long currentUserId = Long.valueOf(userMap.get("id").toString());
+//                Optional<User> userOpt = userService.findById(currentUserId);
+//                if (userOpt.isPresent()) {
+//                    currentUser = userOpt.get();
+//                }
+//            }
+//
+//            if (currentUser == null || (currentUser.getRole() != User.UserRole.ADMIN &&
+//                    currentUser.getRole() != User.UserRole.INSTRUCTOR)) {
+//                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Unauthorized"));
+//            }
+//
+//            Optional<User> user = userService.findById(userId);
+//            if (user.isEmpty()) {
+//                return ResponseEntity.notFound().build();
+//            }
+//
+//            List<WorkoutSession> sessions = workoutSessionService.getUserSessions(user.get());
+//            return ResponseEntity.ok(sessions);
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Failed to fetch user sessions"));
+//        }
+//    }
+
+    @PutMapping("/{id}/quality-review")
+    public ResponseEntity<?> updateSessionQuality(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
+        try {
+            WorkoutSession session = workoutSessionService.updateSessionQuality(id, updates);
+            return ResponseEntity.ok(Map.of("success", true, "session", session));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Failed to update session quality"));
+        }
+    }
+
+
     @GetMapping("/my-sessions")
     public ResponseEntity<?> getMySessions(HttpSession httpSession) {
         try {
@@ -202,14 +282,15 @@ public class WorkoutSessionController {
 
             List<WorkoutSession> sessions = workoutSessionService.getUserSessions(user);
 
-            // Convert to DTO to avoid circular references
+            // Convert to your existing DTO
             List<WorkoutSessionResponseDTO> sessionDTOs = sessions.stream()
                     .map(WorkoutSessionResponseDTO::fromWorkoutSession)
                     .collect(Collectors.toList());
 
-            return ResponseEntity.ok(sessionDTOs);
+            return ResponseEntity.ok(Map.of("success", true, "sessions", sessionDTOs));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Failed to fetch sessions"));
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Failed to fetch sessions: " + e.getMessage()));
         }
     }
 
@@ -242,19 +323,16 @@ public class WorkoutSessionController {
             }
 
             List<WorkoutSession> sessions = workoutSessionService.getUserSessions(user.get());
-            return ResponseEntity.ok(sessions);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Failed to fetch user sessions"));
-        }
-    }
 
-    @PutMapping("/{id}/quality-review")
-    public ResponseEntity<?> updateSessionQuality(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
-        try {
-            WorkoutSession session = workoutSessionService.updateSessionQuality(id, updates);
-            return ResponseEntity.ok(Map.of("success", true, "session", session));
+            // Convert to your existing DTO
+            List<WorkoutSessionResponseDTO> sessionDTOs = sessions.stream()
+                    .map(WorkoutSessionResponseDTO::fromWorkoutSession)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(Map.of("success", true, "sessions", sessionDTOs));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Failed to update session quality"));
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Failed to fetch user sessions: " + e.getMessage()));
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.brandon.dtms2.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -19,10 +20,12 @@ public class WorkoutSession {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({"workoutSessions", "password"})
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "machine_id")
+    @JsonIgnoreProperties({"workoutSessions"})
     private Machine machine;
 
     @NotNull(message = "Start time is required")

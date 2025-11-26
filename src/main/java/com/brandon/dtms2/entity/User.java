@@ -36,8 +36,12 @@ public class User {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
+    @Enumerated(EnumType.STRING)
+    private UserStatus status = UserStatus.ACTIVE; // Default to ACTIVE
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime lastLogin; // Add this field
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonIgnore
@@ -47,9 +51,34 @@ public class User {
         MEMBER, INSTRUCTOR, ADMIN
     }
 
+    public enum UserStatus {
+        ACTIVE, INACTIVE, SUSPENDED
+    }
+
     // Constructors
     public User() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        this.status = UserStatus.ACTIVE; // Default status
+    }
+
+    // Pre-persist and pre-update methods to handle timestamps
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        if (this.status == null) {
+            this.status = UserStatus.ACTIVE;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // Helper method to update last login
+    public void updateLastLogin() {
+        this.lastLogin = LocalDateTime.now();
     }
 }
