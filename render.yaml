@@ -1,13 +1,10 @@
 services:
   - type: web
     name: dtms2
-    env: java
+    env: docker
     plan: free
-    buildCommand: mvn clean package -DskipTests
-    startCommand: java -jar target/DTMS2-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
+    dockerfilePath: Dockerfile
     envVars:
-      - key: JAVA_VERSION
-        value: 17
       - key: SPRING_PROFILES_ACTIVE
         value: prod
       - key: JDBC_DATABASE_URL
@@ -16,3 +13,5 @@ services:
         value: fitnessdb_5iw2_user
       - key: JDBC_DATABASE_PASSWORD
         value: ZpTdhI43Z8nmn39RyWFPOXEnuGoRrBGR
+      - key: PORT
+        value: 8080
