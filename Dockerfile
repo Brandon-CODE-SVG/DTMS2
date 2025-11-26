@@ -2,19 +2,10 @@ FROM maven:3.9-eclipse-temurin-17-alpine AS build
 
 WORKDIR /app
 
-# Copy pom.xml first to cache dependencies
-COPY pom.xml .
-COPY .mvn .mvn
-COPY mvnw .
+COPY . .
 
-# Download dependencies first (separate layer for caching)
-RUN ./mvnw dependency:go-offline -B
-
-# Copy source code
-COPY src src
-
-# Package the application
-RUN ./mvnw clean package -DskipTests
+# Use maven directly instead of mvnw
+RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
 
