@@ -1,24 +1,9 @@
 services:
   - type: web
     name: dtms2
-    env: java
+    env: docker
     plan: free
-    buildCommand: |
-      echo "=== Starting Build Process ==="
-      pwd
-      ls -la
-      mvn clean package -DskipTests
-      echo "=== Build Complete ==="
-      echo "=== Checking Target Directory ==="
-      ls -la target/
-      echo "=== All JAR Files ==="
-      find . -name "*.jar" -type f
-    startCommand: |
-      echo "=== Starting Application ==="
-      echo "Current directory: $(pwd)"
-      echo "Target contents:"
-      ls -la target/
-      java -jar target/DTMS2-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
+    dockerfilePath: ./Dockerfile
     envVars:
-      - key: JAVA_VERSION
-        value: 17
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
