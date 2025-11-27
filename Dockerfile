@@ -12,6 +12,9 @@ WORKDIR /app
 
 COPY --from=build /app/target/DTMS2-0.0.1-SNAPSHOT.jar app.jar
 
+# List contents to verify files are included
+RUN jar tf app.jar | grep application.properties
+
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
