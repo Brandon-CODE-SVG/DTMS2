@@ -1343,29 +1343,13 @@ function refreshDashboard() {
 // Logout function
 async function logout() {
     try {
-        console.log('Instructor logout initiated');
-
-        // Try API logout
-        try {
-            await fetch('/api/auth/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-        } catch (error) {
-            console.log('API logout failed, using direct logout');
-        }
-
-        // Clear storage
-        localStorage.clear();
-        sessionStorage.clear();
-
-        // Redirect to logout endpoint
-        window.location.href = '/logout';
-
+        await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        window.location.href = '/login';
     } catch (error) {
-        console.error('Instructor logout error:', error);
+        console.error('Logout error:', error);
         window.location.href = '/login';
     }
 }

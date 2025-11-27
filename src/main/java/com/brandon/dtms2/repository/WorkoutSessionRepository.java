@@ -56,4 +56,11 @@ public interface WorkoutSessionRepository extends JpaRepository<WorkoutSession, 
 
     @Query("SELECT COUNT(ws) FROM WorkoutSession ws WHERE ws.machine.id = :machineId")
     Long countSessionsByMachineId(@Param("machineId") Long machineId);
+
+//    @Query("SELECT ws FROM WorkoutSession ws JOIN FETCH ws.machine WHERE ws.member.id = :memberId ORDER BY ws.startTime DESC")
+//    List<WorkoutSession> findByMemberIdWithMachine(@Param("memberId") Long memberId);
+
+    @Query("SELECT ws FROM WorkoutSession ws JOIN FETCH ws.machine WHERE ws.user.id = :userId ORDER BY ws.startTime DESC")
+    List<WorkoutSession> findByUserIdWithMachine(@Param("userId") Long userId);
+
 }

@@ -139,16 +139,15 @@ public class WorkoutSessionService {
      * Get all sessions for a user, ordered by most recent first
      */
     public List<WorkoutSession> getUserSessions(User user) {
-        return workoutSessionRepository.findByUserOrderByStartTimeDesc(user);
+        return workoutSessionRepository.findByUserIdWithMachine(user.getId());
     }
 
     /**
      * Get sessions for a specific user ID
      */
     public List<WorkoutSession> getUserSessions(Long userId) {
-        return workoutSessionRepository.findByUserId(userId);
+        return workoutSessionRepository.findByUserIdWithMachine(userId);
     }
-
     /**
      * Get all sessions between dates
      */

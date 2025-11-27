@@ -72,27 +72,40 @@ class MemberDashboard {
 
     async loadWorkoutSessions() {
         try {
+            console.log('Loading workout sessions...');
             const response = await fetch('/api/workouts/my-sessions');
-            if (response.ok) {
-                const sessions = await response.json();
-                console.log('Loaded sessions:', sessions);
 
-                // Ensure sessions is an array
-                this.workoutSessions = Array.isArray(sessions) ? sessions : [];
-
-                this.renderWorkoutHistory();
-                this.renderRecentWorkouts();
-                this.updateDashboardStats();
-                this.renderCharts();
-            } else {
-                console.error('Failed to load workout sessions:', response.status);
-                this.workoutSessions = [];
+            if (!response.ok) {
+                console.error('Server returned error:', response.status, response.statusText);
+                throw new Error(`Server error: ${response.status}`);
             }
+
+            const result = await response.json();
+            console.log('API Response:', result);
+
+            // Extract sessions from the response structure
+            const sessions = result.success ? result.sessions : [];
+            console.log('Successfully loaded sessions:', sessions);
+
+            // Ensure sessions is an array
+            this.workoutSessions = Array.isArray(sessions) ? sessions : [];
+            console.log('Processed workout sessions:', this.workoutSessions);
+
+            this.renderWorkoutHistory();
+            this.renderRecentWorkouts();
+            this.updateDashboardStats();
+            this.renderCharts();
+
         } catch (error) {
             console.error('Failed to load workout sessions:', error);
             this.workoutSessions = [];
+
+            // Show user-friendly error message
+            this.showError('Failed to load workout data. Please try refreshing the page.');
         }
     }
+
+
 
     setupEventListeners() {
         const workoutForm = document.getElementById('workoutForm');
@@ -201,7 +214,7 @@ class MemberDashboard {
                 // Reload the sessions from the server
                 await this.loadWorkoutSessions();
 
-                // Show dashboard section after successful save - FIXED: use this.showSection
+                // Show dashboard section after successful save
                 this.showSection('dashboard');
             } else {
                 alert('Error saving workout: ' + result.message);
@@ -579,35 +592,13 @@ function showSection(sectionName, event) {
 // Logout function
 async function logout() {
     try {
-        console.log('Attempting logout...');
-
-        // Try API logout first
-        try {
-            const response = await fetch('/api/auth/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include'
-            });
-
-            if (response.ok) {
-                console.log('API logout successful');
-            }
-        } catch (apiError) {
-            console.log('API logout failed, using direct logout:', apiError);
-        }
-
-        // Clear local storage
-        localStorage.clear();
-        sessionStorage.clear();
-
-        // Always redirect to logout endpoint
-        window.location.href = '/logout';
-
+        await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        window.location.href = '/login';
     } catch (error) {
         console.error('Logout error:', error);
-        // Fallback: redirect to login
         window.location.href = '/login';
     }
 }
