@@ -13,5 +13,7 @@ services:
         value: fitnessdb_5iw2_user
       - key: SPRING_DATASOURCE_PASSWORD
         value: ZpTdhI43Z8nmn39RyWFPOXEnuGoRrBGR
+      - key: SERVER_PORT
+        value: 8080
       - key: PORT
         value: 8080
